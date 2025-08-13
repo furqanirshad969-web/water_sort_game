@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Color Water Sort Puzzle</title>
+<style>
+    body {
+        background-color: #1e1e1e;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        color: white;
+        margin: 0;
+        padding: 0;
+    }
+    h1 {
+        padding: 10px;
+    }
+    #game {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .tube {
+        width: 60px;
+        height: 200px;
+        border: 2px solid white;
+        border-radius: 10px;
+        margin: 10px;
+        display: flex;
+        flex-direction: column-reverse;
+        overflow: hidden;
+        cursor: pointer;
+        background-color: transparent;
+    }
+    .layer {
+        flex: 1;
+        width: 100%;
+    }
+    .selected {
+        border-color: yellow;
+        box-shadow: 0 0 10px yellow;
+    }
+    button {
+        padding: 10px 20px;
+        margin-top: 20px;
+        background: #444;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #666;
+    }
+</style>
+</head>
+<body>
+<h1>Color Water Sort Puzzle</h1>
+<div id="game"></div>
+<button onclick="resetGame()">Restart</button>
+
+<script>
+const colors = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#073b4c"];
+const capacity = 4;
+const emptyTubes = 2;
+let tubes = [];
+let selectedTube = null;
+
+function createMixedGame() {
+    tubes = [];
+    let allLayers = [];
+    colors.forEach(color => {
+        for (let i = 0; i < capacity; i++) {
+            allLayers.push(color);
+        }
+    });
+
+    // Shuffle colors
+    for (let i = allLayers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allLayers[i], allLayers[j]] = [allLayers[j], allLayers[i]];
+    }
+
+    // Fill tubes
+    let totalTubes = colors.length + emptyTubes;
+    for (let i = 0; i < totalTubes; i++) {
+        tubes.push([]);
+    }
+    let index = 0;
+    for (let i = 0; i < colors.length; i++) {
+        for (let j = 0; j < capacity; j++) {
+            tubes[Math.floor(index / capacity)].push(allLayers[index]);
+            index++;
+        }
+    }
+}
+
+function renderGame() {
+    const gameDiv = document.getElementById("game");
+    gameDiv.innerHTML = "";
+    tubes.forEach((tube, index) => {
+        const tubeDiv = document.createElement("div");
+        tubeDiv.className = "tube";
+        if (selectedTube === index) tubeDiv.classList.add("selected");
+        tubeDiv.onclick = () => handleTubeClick(index);
+
+        for (let i = 0; i < capacity; i++) {
+            const layerDiv = document.createElement("div");
+            layerDiv.className = "layer";
+            let color = tube[i] || "transparent";
+            layerDiv.style.backgroundColor = color;
+            tubeDiv.appendChild(layerDiv);
+        }
+        gameDiv.appendChild(tubeDiv);
+    });
+}
+
+function handleTubeClick(index) {
+    if (selectedTube === null) {
+        if (tubes[index].length > 0) {
+            selectedTube = index;
+        }
+    } else {
+        if (selectedTube === index) {
+            selectedTube = null;
+        } else {
+            if (canPour(selectedTube, index)) {
+                pour(selectedTube, index);
+            }
+            selectedTube = null;
+        }
+    }
+    renderGame();
+    if (checkWin()) {
+        setTimeout(() => alert("🎉 You solved it!"), 100);
+    }
+}
+
+function canPour(src, dst) {
+    if (tubes[src].length === 0) return false;
+    if (tubes[dst].length >= capacity) return false;
+    if (tubes[dst].length === 0) return true;
+    return tubes[dst][tubes[dst].length - 1] === tubes[src][tubes[src].length - 1];
+}
+
+function pour(src, dst) {
+    const color = tubes[src][tubes[src].length - 1];
+    while (tubes[src].length > 0 &&
+           tubes[src][tubes[src].length - 1] === color &&
+           tubes[dst].length < capacity) {
+        tubes[dst].push(tubes[src].pop());
+    }
+}
+
+function checkWin() {
+    return tubes.every(tube =>
+        tube.length === 0 || (tube.length === capacity && tube.every(c => c === tube[0]))
+    );
+}
+
+function resetGame() {
+    createMixedGame();
+    selectedTube = null;
+    renderGame();
+}
+
+// Start game
+resetGame();
+</script>
+</body>
+</html>
